@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Practice Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-indigo-800 mb-2">⌨️ Typing Master</h1>
+            <p class="text-gray-600">Improve your typing skills with our interactive practice game</p>
+        </header>
+
+        <!-- Game Container -->
+        <div class="max-w-4xl mx-auto">
+            <!-- Mode Selection -->
+            <div id="modeSelection" class="bg-white rounded-xl shadow-lg p-8 mb-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Choose Your Challenge</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button onclick="startGame('easy')" class="mode-btn bg-green-500 hover:bg-green-600 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105">
+                        <div class="text-lg mb-2">🌱 Easy</div>
+                        <div class="text-sm opacity-90">Common 3-5 letter words</div>
+                    </button>
+                    <button onclick="startGame('normal')" class="mode-btn bg-blue-500 hover:bg-blue-600 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105">
+                        <div class="text-lg mb-2">⚡ Normal</div>
+                        <div class="text-sm opacity-90">Mixed length vocabulary</div>
+                    </button>
+                    <button onclick="startGame('hard')" class="mode-btn bg-red-500 hover:bg-red-600 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105">
+                        <div class="text-lg mb-2">🔥 Hard</div>
+                        <div class="text-sm opacity-90">Complex & technical terms</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Game Interface -->
+            <div id="gameInterface" class="hidden bg-white rounded-xl shadow-lg p-8">
+                <!-- Game Stats -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-blue-50 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-blue-600" id="timer">60</div>
+                        <div class="text-sm text-gray-600">Time Left</div>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-green-600" id="wpm">0</div>
+                        <div class="text-sm text-gray-600">WPM</div>
+                    </div>
+                    <div class="bg-purple-50 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-purple-600" id="accuracy">100%</div>
+                        <div class="text-sm text-gray-600">Accuracy</div>
+                    </div>
+                    <div class="bg-orange-50 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-orange-600" id="wordsTyped">0</div>
+                        <div class="text-sm text-gray-600">Words Typed</div>
+                    </div>
+                </div>
+
+                <!-- Current Word Display -->
+                <div class="mb-6">
+                    <div class="text-center mb-4">
+                        <div class="text-sm text-gray-500 mb-2">Current Difficulty: <span id="currentMode" class="font-semibold"></span></div>
+                        <div class="text-4xl font-mono font-bold text-gray-800 p-4 bg-gray-50 rounded-lg inline-block min-w-48" id="currentWord">
+                            Click Start to Begin
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="mb-6">
+                    <input 
+                        type="text" 
+                        id="typingInput" 
+                        class="w-full text-2xl font-mono p-4 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-center disabled:bg-gray-100"
+                        placeholder="Type the word above..."
+                        disabled
+                        autocomplete="off"
+                        spellcheck="false"
+                    >
+                </div>
+
+                <!-- Control Buttons -->
+                <div class="flex justify-center gap-4">
+                    <button id="startBtn" onclick="startTyping()" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+                        Start Game
+                    </button>
+                    <button id="pauseBtn" onclick="pauseGame()" class="hidden bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+                        Pause
+                    </button>
+                    <button onclick="backToMenu()" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+                        Back to Menu
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Modal -->
+            <div id="resultsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div class="bg-white rounded-xl p-8 max-w-md mx-4">
+                    <h3 class="text-2xl font-bold text-center mb-6">🎉 Game Complete!</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Words Per Minute:</span>
+                            <span class="font-bold text-blue-600" id="finalWPM">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Accuracy:</span>
+                            <span class="font-bold text-green-600" id="finalAccuracy">0%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Words Typed:</span>
+                            <span class="font-bold text-purple-600" id="finalWordsTyped">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Difficulty:</span>
+                            <span class="font-bold text-orange-600" id="finalMode">Easy</span>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex gap-3">
+                        <button onclick="playAgain()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                            Play Again
+                        </button>
+                        <button onclick="backToMenu()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                            Main Menu
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Vocabulary sets for different difficulty levels
+        const vocabularies = {
+            easy: [
+                'cat', 'dog', 'sun', 'run', 'fun', 'big', 'red', 'car', 'hat', 'bat',
+                'cup', 'pen', 'box', 'key', 'egg', 'fox', 'job', 'map', 'net', 'owl',
+                'pig', 'rat', 'sad', 'top', 'van', 'win', 'yes', 'zoo', 'ice', 'jam'
+            ],
+            normal: [
+                'house', 'water', 'music', 'happy', 'friend', 'school', 'garden', 'travel', 'design', 'future',
+                'computer', 'language', 'creative', 'journey', 'balance', 'mystery', 'freedom', 'adventure', 'harmony', 'wisdom',
+                'challenge', 'discovery', 'energy', 'courage', 'wonder', 'passion', 'success', 'beauty', 'nature', 'dreams'
+            ],
+            hard: [
+                'sophisticated', 'development', 'architecture', 'implementation', 'transformation', 'responsibility', 'entrepreneur', 'technological',
+                'unprecedented', 'philosophical', 'extraordinary', 'revolutionary', 'psychological', 'environmental', 'international', 'communication',
+                'extraordinary', 'authentication', 'infrastructure', 'optimization', 'synchronization', 'configuration', 'specialization', 'determination',
+                'consciousness', 'recommendation', 'characteristics', 'acknowledgment', 'opportunities', 'understanding'
+            ]
+        };
+
+        // Game state
+        let gameState = {
+            currentMode: '',
+            currentWords: [],
+            currentWordIndex: 0,
+            startTime: null,
+            gameTimer: null,
+            timeLeft: 60,
+            isGameActive: false,
+            isPaused: false,
+            correctWords: 0,
+            totalAttempts: 0,
+            currentWord: '',
+            userInput: ''
+        };
+
+        // Initialize game
+        function startGame(mode) {
+            gameState.currentMode = mode;
+            gameState.currentWords = [...vocabularies[mode]].sort(() => Math.random() - 0.5);
+            gameState.currentWordIndex = 0;
+            gameState.timeLeft = 60;
+            gameState.correctWords = 0;
+            gameState.totalAttempts = 0;
+            
+            document.getElementById('modeSelection').classList.add('hidden');
+            document.getElementById('gameInterface').classList.remove('hidden');
+            document.getElementById('currentMode').textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+            
+            setNextWord();
+            updateStats();
+        }
+
+        function startTyping() {
+            gameState.isGameActive = true;
+            gameState.isPaused = false;
+            gameState.startTime = Date.now();
+            
+            document.getElementById('typingInput').disabled = false;
+            document.getElementById('typingInput').focus();
+            document.getElementById('startBtn').classList.add('hidden');
+            document.getElementById('pauseBtn').classList.remove('hidden');
+            
+            // Start the countdown timer
+            gameState.gameTimer = setInterval(() => {
+                if (!gameState.isPaused) {
+                    gameState.timeLeft--;
+                    document.getElementById('timer').textContent = gameState.timeLeft;
+                    
+                    if (gameState.timeLeft <= 0) {
+                        endGame();
+                    }
+                }
+            }, 1000);
+        }
+
+        function pauseGame() {
+            gameState.isPaused = !gameState.isPaused;
+            const pauseBtn = document.getElementById('pauseBtn');
+            const typingInput = document.getElementById('typingInput');
+            
+            if (gameState.isPaused) {
+                pauseBtn.textContent = 'Resume';
+                pauseBtn.className = 'bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors';
+                typingInput.disabled = true;
+            } else {
+                pauseBtn.textContent = 'Pause';
+                pauseBtn.className = 'bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors';
+                typingInput.disabled = false;
+                typingInput.focus();
+            }
+        }
+
+        function setNextWord() {
+            if (gameState.currentWordIndex >= gameState.currentWords.length) {
+                // Reshuffle words if we've gone through all of them
+                gameState.currentWords = [...vocabularies[gameState.currentMode]].sort(() => Math.random() - 0.5);
+                gameState.currentWordIndex = 0;
+            }
+            
+            gameState.currentWord = gameState.currentWords[gameState.currentWordIndex];
+            document.getElementById('currentWord').textContent = gameState.currentWord;
+            document.getElementById('typingInput').value = '';
+            gameState.currentWordIndex++;
+        }
+
+        function updateStats() {
+            const timeElapsed = gameState.startTime ? (Date.now() - gameState.startTime) / 1000 / 60 : 0;
+            const wpm = timeElapsed > 0 ? Math.round(gameState.correctWords / timeElapsed) : 0;
+            const accuracy = gameState.totalAttempts > 0 ? Math.round((gameState.correctWords / gameState.totalAttempts) * 100) : 100;
+            
+            document.getElementById('wpm').textContent = wpm;
+            document.getElementById('accuracy').textContent = accuracy + '%';
+            document.getElementById('wordsTyped').textContent = gameState.correctWords;
+        }
+
+        function endGame() {
+            gameState.isGameActive = false;
+            clearInterval(gameState.gameTimer);
+            
+            const timeElapsed = (Date.now() - gameState.startTime) / 1000 / 60;
+            const finalWPM = Math.round(gameState.correctWords / timeElapsed);
+            const finalAccuracy = gameState.totalAttempts > 0 ? Math.round((gameState.correctWords / gameState.totalAttempts) * 100) : 100;
+            
+            document.getElementById('finalWPM').textContent = finalWPM;
+            document.getElementById('finalAccuracy').textContent = finalAccuracy + '%';
+            document.getElementById('finalWordsTyped').textContent = gameState.correctWords;
+            document.getElementById('finalMode').textContent = gameState.currentMode.charAt(0).toUpperCase() + gameState.currentMode.slice(1);
+            
+            document.getElementById('resultsModal').classList.remove('hidden');
+        }
+
+        function playAgain() {
+            document.getElementById('resultsModal').classList.add('hidden');
+            startGame(gameState.currentMode);
+        }
+
+        function backToMenu() {
+            if (gameState.gameTimer) {
+                clearInterval(gameState.gameTimer);
+            }
+            
+            document.getElementById('gameInterface').classList.add('hidden');
+            document.getElementById('resultsModal').classList.add('hidden');
+            document.getElementById('modeSelection').classList.remove('hidden');
+            
+            // Reset button states
+            document.getElementById('startBtn').classList.remove('hidden');
+            document.getElementById('pauseBtn').classList.add('hidden');
+            document.getElementById('pauseBtn').textContent = 'Pause';
+            
+            // Reset game state
+            gameState = {
+                currentMode: '',
+                currentWords: [],
+                currentWordIndex: 0,
+                startTime: null,
+                gameTimer: null,
+                timeLeft: 60,
+                isGameActive: false,
+                isPaused: false,
+                correctWords: 0,
+                totalAttempts: 0,
+                currentWord: '',
+                userInput: ''
+            };
+        }
+
+        // Handle typing input
+        document.addEventListener('DOMContentLoaded', function() {
+            const typingInput = document.getElementById('typingInput');
+            
+            typingInput.addEventListener('input', function(e) {
+                if (!gameState.isGameActive || gameState.isPaused) return;
+                
+                const userInput = e.target.value.trim();
+                const currentWord = gameState.currentWord;
+                
+                // Check if word is completed
+                if (userInput === currentWord) {
+                    gameState.correctWords++;
+                    gameState.totalAttempts++;
+                    setNextWord();
+                    updateStats();
+                    
+                    // Visual feedback for correct word
+                    e.target.style.backgroundColor = '#dcfce7';
+                    setTimeout(() => {
+                        e.target.style.backgroundColor = '';
+                    }, 200);
+                }
+                
+                // Visual feedback for typing
+                if (currentWord.startsWith(userInput)) {
+                    e.target.style.borderColor = '#10b981';
+                } else {
+                    e.target.style.borderColor = '#ef4444';
+                }
+            });
+            
+            typingInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && gameState.isGameActive && !gameState.isPaused) {
+                    const userInput = e.target.value.trim();
+                    if (userInput !== gameState.currentWord) {
+                        gameState.totalAttempts++;
+                        updateStats();
+                        
+                        // Visual feedback for incorrect word
+                        e.target.style.backgroundColor = '#fecaca';
+                        setTimeout(() => {
+                            e.target.style.backgroundColor = '';
+                        }, 200);
+                    }
+                    e.target.value = '';
+                    e.target.style.borderColor = '#d1d5db';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
